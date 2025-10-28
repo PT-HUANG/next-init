@@ -1,0 +1,376 @@
+#!/bin/bash
+
+# ============================================================================
+# 常數定義
+# ============================================================================
+
+# 顏色定義
+readonly NC='\033[0m'
+readonly RED='\033[1;31m'
+readonly GREEN='\033[1;32m'
+readonly YELLOW='\033[1;33m'
+readonly BLUE='\033[1;34m'
+readonly CYAN='\033[1;36m'
+
+# 全域變數定義
+readonly SCRIPT_DIR="$( cd "$( dirname "${BASH_SOURCE[0]}" )" && pwd )"
+BASE_PATH=""
+PROJECT_NAME=""
+PROJECT_PATH=""
+TAILWIND_OPTION=""
+SELECTED_PACKAGES=()
+
+# ============================================================================
+# 工具函式
+# ============================================================================
+
+# 印出錯誤訊息並退出
+error_exit() {
+    echo -e "${RED}❌ $1${NC}" >&2
+    exit 1
+}
+
+# 印出成功訊息
+success_msg() {
+    echo -e "\n${GREEN}✅ $1${NC}"
+}
+
+# 印出資訊訊息
+info_msg() {
+    echo -e "\n${CYAN}➡️  $1${NC}"
+}
+
+# ============================================================================
+# 使用說明函式
+# ============================================================================
+
+show_usage() {
+    echo ""
+    echo -e "${BLUE}📖 使用說明${NC}"
+    echo ""
+    echo -e "  這是一個 Next.js 專案自動化初始化工具"
+    echo -e "  可協助您快速建立 Next.js 專案，安裝套件並進行基礎設定"
+    echo ""
+    echo -e "  ${CYAN}步驟 1${NC} - 檢查必要的執行檔案"
+    echo -e "    • 檢查所有必要執行腳本"
+    echo ""
+    echo -e "  ${CYAN}步驟 2${NC} - 設定專案路徑、專案名稱"
+    echo -e "    • 輸入專案路徑（預設為腳本所在目錄）"
+    echo -e "    • 輸入專案名稱（如果沒輸入則退出）"
+    echo ""
+    echo -e "  ${CYAN}步驟 3${NC} - 建立 Next.js 專案"
+    echo -e "    • 使用 pnpm create next-app 建立專案"
+    echo -e "    • 可選套件(單選)："
+    echo -e "      - Tailwind CSS v3 + Shadcn UI"
+    echo -e "      - Tailwind CSS v3"
+    echo -e "      - Tailwind CSS v4 + Shadcn UI"
+    echo -e "      - Tailwind CSS v4"
+    echo -e "      - 不安裝"
+    echo -e "    • 擴充套件(多選)："
+    echo -e "      - Zustand"
+    echo -e "      - Zod"
+    echo -e "      - Material UI"
+    echo -e "      - SWR"
+    echo -e "      - Axios"
+    echo ""
+    echo -e "  ${CYAN}步驟 4${NC} - 設定 next.config.ts"
+    echo -e "    • 啟用 standalone 輸出模式（Docker 最佳化）"
+    echo -e "    • 關閉 ESLint 建置檢查"
+    echo ""
+}
+
+# ============================================================================
+# 環境檢查函式
+# ============================================================================
+
+check_dependencies() {    
+    # 檢查 setup_next.sh
+    if [ ! -f "$SCRIPT_DIR/setup_next.sh" ]; then
+        echo -e "${YELLOW}缺少必要檔案: setup_next.sh${NC}"
+        error_exit "在腳本目錄找不到 setup_next.sh: $SCRIPT_DIR"
+    fi
+
+    # 檢查 setup_config.sh
+    if [ ! -f "$SCRIPT_DIR/setup_config.sh" ]; then
+        echo -e "${YELLOW}缺少必要檔案: setup_config.sh${NC}"
+        error_exit "在腳本目錄找不到 setup_config.sh: $SCRIPT_DIR"
+    fi
+
+    # 授予執行權限
+    chmod +x "$SCRIPT_DIR"/*.sh
+
+    success_msg "確認所有必要檔案存在"
+}
+
+# ============================================================================
+# 使用者輸入函式
+# ============================================================================
+
+setup_project() {
+    local project_path
+    local project_name
+
+    # 設定專案路徑
+    project_path=$(gum input \
+        --prompt "➡️  請輸入專案路徑: " \
+        --value "$SCRIPT_DIR" \
+        --header "")
+
+    local exit_code=$?
+
+    # 檢查 gum 是否被取消（ESC 或 Ctrl+C）
+    if [ $exit_code -ne 0 ]; then
+        error_exit "已取消操作"
+    fi
+
+    # 檢查是否有輸入，若無則使用腳本所在目錄
+    if [ -z "$project_path" ]; then
+        BASE_PATH="$SCRIPT_DIR"
+        echo "使用腳本所在目錄"
+    else
+        # 驗證路徑是否存在
+        if [ ! -d "$project_path" ]; then
+            error_exit "指定的路徑不存在: $project_path"
+        fi
+        BASE_PATH="$project_path"
+    fi
+
+    # 設定專案名稱
+    project_name=$(gum input \
+        --prompt "➡️  請輸入專案名稱: " \
+        --placeholder "my-app" \
+        --header "")
+
+    exit_code=$?
+
+    # 檢查 gum 是否被取消（ESC 或 Ctrl+C）
+    if [ $exit_code -ne 0 ]; then
+        error_exit "已取消操作"
+    fi
+
+    # 檢查是否有輸入
+    if [ -z "$project_name" ]; then
+        error_exit "未輸入專案名稱"
+    fi
+
+    PROJECT_NAME="$project_name"
+    PROJECT_PATH="$BASE_PATH/$PROJECT_NAME"
+
+    # 檢查專案目錄是否已存在
+    if [ -d "$PROJECT_PATH" ]; then
+        error_exit "專案目錄已存在: $PROJECT_PATH"
+    fi
+
+    success_msg "專案路徑及名稱設定完成"
+}
+
+# ============================================================================
+# 套件選擇函式
+# ============================================================================
+
+setup_packages() {
+    # 單選: Tailwind CSS 選項
+    TAILWIND_OPTION=$(gum choose \
+        --header "➡️  請選擇 Tailwind CSS 選項 (單選):" \
+        --header.foreground white \
+        "Tailwind CSS v3 + Shadcn UI(推薦)" \
+        "Tailwind CSS v3" \
+        "Tailwind CSS v4 + Shadcn UI" \
+        "Tailwind CSS v4" \
+        "不安裝")
+
+    local exit_code=$?
+
+    # 檢查是否取消操作
+    if [ $exit_code -ne 0 ]; then
+        error_exit "已取消操作"
+    fi
+
+    # 檢查是否有選擇
+    if [ -z "$TAILWIND_OPTION" ]; then
+        error_exit "未選擇 Tailwind CSS 選項"
+    fi
+
+    echo ""
+    echo -e "${GREEN}✓ 已選擇套件:${NC}"
+    echo -e "$TAILWIND_OPTION"
+    echo ""
+
+    # 多選: 擴充套件
+    local selected_items
+    selected_items=$(gum choose \
+        --no-limit \
+        --header "選擇要安裝的擴充套件 (多選，使用空白鍵選擇，Enter 確認)" \
+        --header.foreground white\
+        "Zustand" \
+        "Zod" \
+        "Material UI" \
+        "SWR" \
+        "Axios")
+
+    exit_code=$?
+
+    # 檢查是否取消操作
+    if [ $exit_code -ne 0 ]; then
+        error_exit "已取消操作"
+    fi
+
+    # 將選擇的套件存入陣列
+    if [ -n "$selected_items" ]; then
+        # 將多行結果轉換為陣列
+        while IFS= read -r package; do
+            SELECTED_PACKAGES+=("$package")
+        done <<< "$selected_items"
+    fi
+
+    # 顯示選擇結果
+    if [ ${#SELECTED_PACKAGES[@]} -eq 0 ]; then
+        echo -e "${YELLOW}✓ 未選擇任何擴充套件${NC}"
+    else
+        echo -e "${GREEN}✓ 已選擇套件:${NC}"
+        for package in "${SELECTED_PACKAGES[@]}"; do
+            echo -e "  • $package"
+        done
+    fi
+
+}
+
+# ============================================================================
+# 專案建立函式
+# ============================================================================
+setup_next() {
+    info_msg "執行 setup_next.sh 建立 Next.js 專案"
+
+    # 將 SELECTED_PACKAGES 陣列轉換為以逗號分隔的字串
+    local packages_string=""
+    if [ ${#SELECTED_PACKAGES[@]} -gt 0 ]; then
+        # 使用 printf 和 IFS 來連接陣列元素
+        packages_string=$(IFS=,; echo "${SELECTED_PACKAGES[*]}")
+    fi
+
+    if "$SCRIPT_DIR/setup_next.sh" "$PROJECT_PATH" "$TAILWIND_OPTION" "$packages_string"; then
+        :
+    else
+        error_exit "Next.js 專案建立失敗"
+    fi
+}
+
+# ============================================================================
+# next.config 設定函式
+# ============================================================================
+
+setup_config() {
+    # 檢查專案目錄是否存在
+    [ ! -d "$PROJECT_PATH" ] && error_exit "專案目錄不存在: $PROJECT_PATH"
+
+    # subshell: 直接在專案目錄中執行 setup_config.sh
+    if (cd "$PROJECT_PATH" && "$SCRIPT_DIR/setup_config.sh"); then
+        success_msg "next.config.ts 設定成功"
+    else
+        error_exit "next.config.ts 設定失敗"
+    fi
+}
+
+# ============================================================================
+# package.json 設定函式
+# ============================================================================
+
+setup_package_json() {
+    # 檢查專案目錄是否存在
+    [ ! -d "$PROJECT_PATH" ] && error_exit "專案目錄不存在: $PROJECT_PATH"
+
+    # subshell: 直接在專案目錄中執行 docker.sh
+    if (cd "$PROJECT_PATH" && "$SCRIPT_DIR/setup_package_json.sh"); then
+        success_msg "package.json 設定成功"
+    else
+        error_exit "package.json 設定失敗"
+    fi
+}
+
+# ============================================================================
+# 顯示結果函式
+# ============================================================================
+
+show_completion_message() {
+    echo ""
+    echo -e "${GREEN}━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━${NC}"
+    echo -e "${GREEN}🎉 專案初始化完成！${NC}"
+    echo -e "${GREEN}━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━${NC}"
+    echo ""
+    echo -e "${BLUE}📁 專案名稱:${NC} $PROJECT_NAME"
+    echo -e "${BLUE}📍 專案位置:${NC} $PROJECT_PATH"
+    echo ""
+}
+
+# ============================================================================
+# 主函式
+# ============================================================================
+
+main() {
+    echo ""
+    echo -e "${CYAN}╔════════════════════════════════════════╗${NC}"
+    echo -e "${CYAN}║     Next.js 專案自動化初始化工具       ║${NC}"
+    echo -e "${CYAN}╚════════════════════════════════════════╝${NC}"
+
+    # 先檢查 gum 是否已安裝
+    if ! command -v gum &> /dev/null; then
+        error_exit "找不到 gum，請先安裝 gum: https://github.com/charmbracelet/gum"
+    fi
+
+    # 檢查 pnpm
+    if ! command -v pnpm &> /dev/null; then
+        error_exit "找不到 pnpm，請先安裝 pnpm: https://pnpm.io/zh-TW/"
+    fi
+
+    # 顯示選單讓用戶選擇
+    CHOICE=$(gum choose --header "" \
+        "🚀 開始新專案" \
+        "📖 查看使用說明")
+
+    local exit_code=$?
+
+    # 檢查是否取消操作
+    if [ $exit_code -ne 0 ]; then
+        echo -e "${RED}❌ 已取消操作${NC}"
+        exit 0
+    fi
+
+    # 根據選擇執行對應操作
+    if [[ "$CHOICE" == "📖 查看使用說明" ]]; then
+        show_usage
+        exit 0
+    fi
+
+    # 步驟 1: 檢查依賴
+    echo -e "\n${BLUE}[步驟 1] 檢查環境${NC}"
+    check_dependencies
+    
+    # 步驟 2: 設定專案名稱
+    echo -e "\n${BLUE}[步驟 2] 設定專案路徑名稱${NC}"
+    setup_project
+    
+    # 步驟 3: 選擇套件
+    echo -e "\n${BLUE}[步驟 3] 選擇套件${NC}"
+    setup_packages
+    
+    # 步驟 4: 安裝 Next.js 及所選套件
+    echo -e "\n${BLUE}[步驟 4] 設定環境變數${NC}"
+    setup_next
+
+    # 步驟 5: 設定 next.config.ts
+    echo -e "\n${BLUE}[步驟 5] 設定 next.config.ts${NC}"
+    setup_config
+    
+    # 顯示完成訊息
+    show_completion_message
+}
+
+# ============================================================================
+# 程式進入點
+# ============================================================================
+
+# 捕捉錯誤並清理
+trap 'echo -e "\n${RED}程式被中斷${NC}"; exit 1' INT TERM
+
+# 執行主函式
+main "$@"
