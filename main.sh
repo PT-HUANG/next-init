@@ -4,41 +4,19 @@
 # 常數定義
 # ============================================================================
 
-# 顏色定義
-readonly NC='\033[0m'
-readonly RED='\033[1;31m'
-readonly GREEN='\033[1;32m'
-readonly YELLOW='\033[1;33m'
-readonly BLUE='\033[1;34m'
-readonly CYAN='\033[1;36m'
+# 取得腳本所在目錄
+    readonly SCRIPT_DIR="$( cd "$( dirname "${BASH_SOURCE[0]}" )" && pwd )"
+
+# 載入共用函式庫
+source "$SCRIPT_DIR/lib/common.sh"
 
 # 全域變數定義
-readonly SCRIPT_DIR="$( cd "$( dirname "${BASH_SOURCE[0]}" )" && pwd )"
 BASE_PATH=""
 PROJECT_NAME=""
 PROJECT_PATH=""
 TAILWIND_OPTION=""
-SELECTED_PACKAGES=()
-
-# ============================================================================
-# 工具函式
-# ============================================================================
-
-# 印出錯誤訊息並退出
-error_exit() {
-    echo -e "${RED}❌ $1${NC}" >&2
-    exit 1
-}
-
-# 印出成功訊息
-success_msg() {
-    echo -e "\n${GREEN}✅ $1${NC}"
-}
-
-# 印出資訊訊息
-info_msg() {
-    echo -e "\n${CYAN}➡️  $1${NC}"
-}
+PACKAGES_ARRAY=()
+SELECTED_PACKAGES=""
 
 # ============================================================================
 # 使用說明函式
@@ -83,21 +61,38 @@ show_usage() {
 # 環境檢查函式
 # ============================================================================
 
-check_dependencies() {    
+check_dependencies() {
     # 檢查 setup_next.sh
-    if [ ! -f "$SCRIPT_DIR/setup_next.sh" ]; then
-        echo -e "${YELLOW}缺少必要檔案: setup_next.sh${NC}"
-        error_exit "在腳本目錄找不到 setup_next.sh: $SCRIPT_DIR"
-    fi
+    check_file "$SCRIPT_DIR/setup_next.sh" "在腳本目錄找不到 setup_next.sh: $SCRIPT_DIR"
 
     # 檢查 setup_config.sh
-    if [ ! -f "$SCRIPT_DIR/setup_config.sh" ]; then
-        echo -e "${YELLOW}缺少必要檔案: setup_config.sh${NC}"
-        error_exit "在腳本目錄找不到 setup_config.sh: $SCRIPT_DIR"
-    fi
+    check_file "$SCRIPT_DIR/setup_config.sh" "在腳本目錄找不到 setup_config.sh: $SCRIPT_DIR"
+
+    # 檢查 lib 目錄及其內容
+    check_directory "$SCRIPT_DIR/lib" "找不到 lib 目錄: $SCRIPT_DIR/lib"
+    check_file "$SCRIPT_DIR/lib/common.sh" "找不到 lib/common.sh"
+    check_file "$SCRIPT_DIR/lib/packages.sh" "找不到 lib/packages.sh"
+
+    # 檢查 installers 目錄及其內容
+    check_directory "$SCRIPT_DIR/installers" "找不到 installers 目錄: $SCRIPT_DIR/installers"
+    check_file "$SCRIPT_DIR/installers/tailwind-v3-shadcn.sh" "找不到 installers/tailwind-v3-shadcn.sh"
+    check_file "$SCRIPT_DIR/installers/tailwind-v3.sh" "找不到 installers/tailwind-v3.sh"
+    check_file "$SCRIPT_DIR/installers/tailwind-v4-shadcn.sh" "找不到 installers/tailwind-v4-shadcn.sh"
+    check_file "$SCRIPT_DIR/installers/tailwind-v4.sh" "找不到 installers/tailwind-v4.sh"
+    check_file "$SCRIPT_DIR/installers/no-tailwind.sh" "找不到 installers/no-tailwind.sh"
+
+    # 檢查 templates 目錄及其內容
+    check_directory "$SCRIPT_DIR/templates" "找不到 templates 目錄: $SCRIPT_DIR/templates"
+    check_file "$SCRIPT_DIR/templates/tailwind-v3.config.ts" "找不到 templates/tailwind-v3.config.ts"
+    check_file "$SCRIPT_DIR/templates/postcss-v3.config.mjs" "找不到 templates/postcss-v3.config.mjs"
+    check_file "$SCRIPT_DIR/templates/postcss-v4.config.mjs" "找不到 templates/postcss-v4.config.mjs"
+    check_file "$SCRIPT_DIR/templates/globals-v3.css" "找不到 templates/globals-v3.css"
+    check_file "$SCRIPT_DIR/templates/globals-v4.css" "找不到 templates/globals-v4.css"
 
     # 授予執行權限
     chmod +x "$SCRIPT_DIR"/*.sh
+    chmod +x "$SCRIPT_DIR/lib"/*.sh
+    chmod +x "$SCRIPT_DIR/installers"/*.sh
 
     success_msg "確認所有必要檔案存在"
 }
@@ -192,8 +187,7 @@ setup_packages() {
     fi
 
     echo ""
-    echo -e "${GREEN}✓ 已選擇套件:${NC}"
-    echo -e "$TAILWIND_OPTION"
+    success_msg "已選擇套件:$TAILWIND_OPTION"
     echo ""
 
     # 多選: 擴充套件
@@ -219,18 +213,20 @@ setup_packages() {
     if [ -n "$selected_items" ]; then
         # 將多行結果轉換為陣列
         while IFS= read -r package; do
-            SELECTED_PACKAGES+=("$package")
+            PACKAGES_ARRAY+=("$package")
         done <<< "$selected_items"
     fi
 
-    # 顯示選擇結果
-    if [ ${#SELECTED_PACKAGES[@]} -eq 0 ]; then
-        echo -e "${YELLOW}✓ 未選擇任何擴充套件${NC}"
+    # 顯示選擇結果並轉換為字串
+    if [ ${#PACKAGES_ARRAY[@]} -eq 0 ]; then
+        success_msg "未選擇任何擴充套件"
     else
-        echo -e "${GREEN}✓ 已選擇套件:${NC}"
-        for package in "${SELECTED_PACKAGES[@]}"; do
+        success_msg "已選擇套件:"
+        for package in "${PACKAGES_ARRAY[@]}"; do
             echo -e "  • $package"
         done
+        # 將陣列轉換為以逗號分隔的字串
+        SELECTED_PACKAGES=$(IFS=,; echo "${PACKAGES_ARRAY[*]}")
     fi
 
 }
@@ -241,14 +237,7 @@ setup_packages() {
 setup_next() {
     info_msg "執行 setup_next.sh 建立 Next.js 專案"
 
-    # 將 SELECTED_PACKAGES 陣列轉換為以逗號分隔的字串
-    local packages_string=""
-    if [ ${#SELECTED_PACKAGES[@]} -gt 0 ]; then
-        # 使用 printf 和 IFS 來連接陣列元素
-        packages_string=$(IFS=,; echo "${SELECTED_PACKAGES[*]}")
-    fi
-
-    if "$SCRIPT_DIR/setup_next.sh" "$PROJECT_PATH" "$TAILWIND_OPTION" "$packages_string"; then
+    if "$SCRIPT_DIR/setup_next.sh" "$PROJECT_PATH" "$TAILWIND_OPTION" "$SELECTED_PACKAGES"; then
         :
     else
         error_exit "Next.js 專案建立失敗"
@@ -268,22 +257,6 @@ setup_config() {
         success_msg "next.config.ts 設定成功"
     else
         error_exit "next.config.ts 設定失敗"
-    fi
-}
-
-# ============================================================================
-# package.json 設定函式
-# ============================================================================
-
-setup_package_json() {
-    # 檢查專案目錄是否存在
-    [ ! -d "$PROJECT_PATH" ] && error_exit "專案目錄不存在: $PROJECT_PATH"
-
-    # subshell: 直接在專案目錄中執行 docker.sh
-    if (cd "$PROJECT_PATH" && "$SCRIPT_DIR/setup_package_json.sh"); then
-        success_msg "package.json 設定成功"
-    else
-        error_exit "package.json 設定失敗"
     fi
 }
 
@@ -313,14 +286,10 @@ main() {
     echo -e "${CYAN}╚════════════════════════════════════════╝${NC}"
 
     # 先檢查 gum 是否已安裝
-    if ! command -v gum &> /dev/null; then
-        error_exit "找不到 gum，請先安裝 gum: https://github.com/charmbracelet/gum"
-    fi
+    check_command "gum" "https://github.com/charmbracelet/gum"
 
     # 檢查 pnpm
-    if ! command -v pnpm &> /dev/null; then
-        error_exit "找不到 pnpm，請先安裝 pnpm: https://pnpm.io/zh-TW/"
-    fi
+    check_command "pnpm" "https://pnpm.io/zh-TW/"
 
     # 顯示選單讓用戶選擇
     CHOICE=$(gum choose --header "" \
@@ -356,18 +325,10 @@ main() {
     # 步驟 4: 安裝 Next.js 及所選套件
     echo -e "\n${BLUE}[步驟 4] 設定環境變數${NC}"
     setup_next
-
-    # 步驟 5: 設定 next.config.ts
-    echo -e "\n${BLUE}[步驟 5] 設定 next.config.ts${NC}"
-    setup_config
     
     # 顯示完成訊息
     show_completion_message
 }
-
-# ============================================================================
-# 程式進入點
-# ============================================================================
 
 # 捕捉錯誤並清理
 trap 'echo -e "\n${RED}程式被中斷${NC}"; exit 1' INT TERM
