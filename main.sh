@@ -73,13 +73,11 @@ check_dependencies() {
     check_file "$SCRIPT_DIR/lib/common.sh" "找不到 lib/common.sh"
     check_file "$SCRIPT_DIR/lib/packages.sh" "找不到 lib/packages.sh"
 
-    # 檢查 installers 目錄及其內容
-    check_directory "$SCRIPT_DIR/installers" "找不到 installers 目錄: $SCRIPT_DIR/installers"
-    check_file "$SCRIPT_DIR/installers/tailwind-v3-shadcn.sh" "找不到 installers/tailwind-v3-shadcn.sh"
-    check_file "$SCRIPT_DIR/installers/tailwind-v3.sh" "找不到 installers/tailwind-v3.sh"
-    check_file "$SCRIPT_DIR/installers/tailwind-v4-shadcn.sh" "找不到 installers/tailwind-v4-shadcn.sh"
-    check_file "$SCRIPT_DIR/installers/tailwind-v4.sh" "找不到 installers/tailwind-v4.sh"
-    check_file "$SCRIPT_DIR/installers/no-tailwind.sh" "找不到 installers/no-tailwind.sh"
+    # 檢查 next_installers 目錄及其內容
+    check_directory "$SCRIPT_DIR/next_installers" "找不到 next_installers 目錄: $SCRIPT_DIR/next_installers"
+    check_file "$SCRIPT_DIR/next_installers/tailwind-v3.sh" "找不到 next_installers/tailwind-v3.sh"
+    check_file "$SCRIPT_DIR/next_installers/tailwind-v4.sh" "找不到 next_installers/tailwind-v4.sh"
+    check_file "$SCRIPT_DIR/next_installers/no-tailwind.sh" "找不到 next_installers/no-tailwind.sh"
 
     # 檢查 templates 目錄及其內容
     check_directory "$SCRIPT_DIR/templates" "找不到 templates 目錄: $SCRIPT_DIR/templates"
@@ -92,7 +90,7 @@ check_dependencies() {
     # 授予執行權限
     chmod +x "$SCRIPT_DIR"/*.sh
     chmod +x "$SCRIPT_DIR/lib"/*.sh
-    chmod +x "$SCRIPT_DIR/installers"/*.sh
+    chmod +x "$SCRIPT_DIR/next_installers"/*.sh
 
     success_msg "確認所有必要檔案存在"
 }
@@ -168,11 +166,9 @@ setup_packages() {
     TAILWIND_OPTION=$(gum choose \
         --header "➡️  請選擇 Tailwind CSS 選項 (單選):" \
         --header.foreground white \
-        "Tailwind CSS v3 + Shadcn UI(推薦)" \
         "Tailwind CSS v3" \
-        "Tailwind CSS v4 + Shadcn UI" \
         "Tailwind CSS v4" \
-        "不安裝")
+        "不安裝Tailwind CSS")
 
     local exit_code=$?
 
@@ -192,15 +188,32 @@ setup_packages() {
 
     # 多選: 擴充套件
     local selected_items
-    selected_items=$(gum choose \
-        --no-limit \
-        --header "選擇要安裝的擴充套件 (多選，使用空白鍵選擇，Enter 確認)" \
-        --header.foreground white\
-        "Zustand" \
-        "Zod" \
-        "Material UI" \
-        "SWR" \
-        "Axios")
+
+    # 根據 Tailwind 選擇決定是否顯示 Shadcn UI
+    if [[ "$TAILWIND_OPTION" == "不安裝Tailwind CSS" ]]; then
+        # 沒有安裝 Tailwind，不顯示 Shadcn UI
+        selected_items=$(gum choose \
+            --no-limit \
+            --header "選擇要安裝的擴充套件 (多選，使用空白鍵選擇，Enter 確認)" \
+            --header.foreground white\
+            "Zustand" \
+            "Zod" \
+            "Material UI" \
+            "SWR" \
+            "Axios")
+    else
+        # 有安裝 Tailwind，顯示 Shadcn UI 選項
+        selected_items=$(gum choose \
+            --no-limit \
+            --header "選擇要安裝的擴充套件 (多選，使用空白鍵選擇，Enter 確認)" \
+            --header.foreground white\
+            "Shadcn UI (推薦)" \
+            "Zustand" \
+            "Zod" \
+            "Material UI" \
+            "SWR" \
+            "Axios")
+    fi
 
     exit_code=$?
 

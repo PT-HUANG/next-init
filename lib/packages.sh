@@ -71,6 +71,22 @@ install_package() {
             fi
             ;;
 
+        "Shadcn UI (推薦)")
+            info_msg "安裝 Shadcn UI"
+            pnpm dlx shadcn@latest init --yes
+            if [ $? -ne 0 ]; then
+                error_msg "Shadcn UI 初始化失敗"
+                return 1
+            fi
+
+            # 安裝基本元件
+            pnpm dlx shadcn@latest add button
+            pnpm dlx shadcn@latest add alert-dialog
+            pnpm dlx shadcn@latest add checkbox
+
+            success_msg "Shadcn UI 安裝成功"
+            ;;
+
         *)
             error_msg "未知的套件: $package_name"
             return 1

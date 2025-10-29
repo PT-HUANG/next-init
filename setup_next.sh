@@ -29,24 +29,16 @@ echo ""
 # ============================================================
 
 case "$TAILWIND_CHOICE" in
-    "Tailwind CSS v3 + Shadcn UI(推薦)")
-        source "$SCRIPT_DIR/tailwind_installers/tailwind-v3-shadcn.sh"
-        install "$PROJECT_PATH"
-        ;;
     "Tailwind CSS v3")
-        source "$SCRIPT_DIR/tailwind_installers/tailwind-v3.sh"
-        install "$PROJECT_PATH"
-        ;;
-    "Tailwind CSS v4 + Shadcn UI")
-        source "$SCRIPT_DIR/tailwind_installers/tailwind-v4-shadcn.sh"
+        source "$SCRIPT_DIR/next_installers/tailwind-v3.sh"
         install "$PROJECT_PATH"
         ;;
     "Tailwind CSS v4")
-        source "$SCRIPT_DIR/tailwind_installers/tailwind-v4.sh"
+        source "$SCRIPT_DIR/next_installers/tailwind-v4.sh"
         install "$PROJECT_PATH"
         ;;
-    "不安裝")
-        source "$SCRIPT_DIR/tailwind_installers/no-tailwind.sh"
+    "不安裝Tailwind CSS")
+        source "$SCRIPT_DIR/next_installers/no-tailwind.sh"
         install "$PROJECT_PATH"
         ;;
     *)
