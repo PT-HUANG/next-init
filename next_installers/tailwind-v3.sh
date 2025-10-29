@@ -22,7 +22,7 @@ install() {
     echo ""
 
     # 1. 建立專案
-    pnpm create next-app@latest "$project_path" --typescript --no-eslint --no-react-compiler --no-tailwind --no-src-dir --app --turbopack --import-alias "@/*"
+    pnpm create next-app@latest "$project_path" --typescript --no-eslint --react-compiler --no-tailwind --no-src-dir --app --turbopack --import-alias "@/*"
     if [ $? -ne 0 ]; then
         error_msg "Next.js 專案建立失敗"
         return 1
@@ -53,7 +53,9 @@ install() {
     cp "$TEMPLATE_DIR/postcss-v3.config.mjs" ./postcss.config.mjs
 
     # 配置 globals.css
-    cp "$TEMPLATE_DIR/globals-v3.css" ./app/globals.css
+    cat "$TEMPLATE_DIR/globals-v3.css" > ./app/globals.css.tmp
+    cat ./app/globals.css >> ./app/globals.css.tmp
+    mv ./app/globals.css.tmp ./app/globals.css
 
     success_msg "Tailwind CSS v3 安裝設定完成"
 

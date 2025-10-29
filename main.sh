@@ -38,13 +38,12 @@ show_usage() {
     echo ""
     echo -e "  ${CYAN}步驟 3${NC} - 建立 Next.js 專案"
     echo -e "    • 使用 pnpm create next-app 建立專案"
-    echo -e "    • 可選套件(單選)："
-    echo -e "      - Tailwind CSS v3 + Shadcn UI"
+    echo -e "    • 設定 Tailwind CSS 選項："
     echo -e "      - Tailwind CSS v3"
-    echo -e "      - Tailwind CSS v4 + Shadcn UI"
     echo -e "      - Tailwind CSS v4"
     echo -e "      - 不安裝"
     echo -e "    • 擴充套件(多選)："
+    echo -e "      - Shadcn UI"
     echo -e "      - Zustand"
     echo -e "      - Zod"
     echo -e "      - Material UI"
@@ -53,7 +52,6 @@ show_usage() {
     echo ""
     echo -e "  ${CYAN}步驟 4${NC} - 設定 next.config.ts"
     echo -e "    • 啟用 standalone 輸出模式（Docker 最佳化）"
-    echo -e "    • 關閉 ESLint 建置檢查"
     echo ""
 }
 

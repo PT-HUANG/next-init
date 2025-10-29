@@ -41,7 +41,9 @@ install() {
     cp "$TEMPLATE_DIR/postcss-v4.config.mjs" ./postcss.config.mjs
 
     # 配置 globals.css
-    cp "$TEMPLATE_DIR/globals-v4.css" ./app/globals.css
+    cat "$TEMPLATE_DIR/globals-v4.css" > ./app/globals.css.tmp
+    cat ./app/globals.css >> ./app/globals.css.tmp
+    mv ./app/globals.css.tmp ./app/globals.css
 
     success_msg "Next.js 專案建立完成（使用 Tailwind CSS v4）"
 
