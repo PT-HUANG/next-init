@@ -21,7 +21,7 @@ install() {
     info_msg "方案: Tailwind CSS v4 "
     echo ""
 
-    # 1. 建立專案 & 進入專案目錄
+    # 建立專案 & 進入專案目錄
     pnpm create next-app@latest "$project_path" --yes
     if [ $? -ne 0 ]; then
         error_msg "Next.js 專案建立失敗"
@@ -29,23 +29,7 @@ install() {
     fi
     cd "$project_path" || return 1
 
-    # 2. 安裝 Tailwind CSS v4
-    info_msg "Tailwind CSS v4"
-    pnpm add -D tailwindcss @tailwindcss/postcss
-    if [ $? -ne 0 ]; then
-        error_msg "Tailwind CSS v4 初始化失敗"
-        return 1
-    fi
-
-    # 配置 postcss.config.mjs
-    cp "$TEMPLATE_DIR/postcss-v4.config.mjs" ./postcss.config.mjs
-
-    # 配置 globals.css
-    cat "$TEMPLATE_DIR/globals-v4.css" > ./app/globals.css.tmp
-    cat ./app/globals.css >> ./app/globals.css.tmp
-    mv ./app/globals.css.tmp ./app/globals.css
-
-    success_msg "Next.js 專案建立完成（使用 Tailwind CSS v4）"
+    success_msg "Tailwind CSS v4 安裝完成"
 
     return 0
 }

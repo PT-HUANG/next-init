@@ -5,7 +5,10 @@
 # ============================================================================
 
 # 取得腳本所在目錄
-    readonly SCRIPT_DIR="$( cd "$( dirname "${BASH_SOURCE[0]}" )" && pwd )"
+SCRIPT_DIR="$( cd "$( dirname "${BASH_SOURCE[0]}" )" && pwd )"
+
+# 取得腳本上一層的目錄
+PARENT_DIR="$( cd "${SCRIPT_DIR}/.." && pwd )"
 
 # 載入共用函式庫
 source "$SCRIPT_DIR/lib/common.sh"
@@ -104,7 +107,7 @@ setup_project() {
     # 設定專案路徑
     project_path=$(gum input \
         --prompt "➡️  請輸入專案路徑: " \
-        --value "$SCRIPT_DIR" \
+        --value "$PARENT_DIR" \
         --header "")
 
     local exit_code=$?
@@ -188,8 +191,8 @@ setup_packages() {
     local selected_items
 
     # 根據 Tailwind 選擇決定是否顯示 Shadcn UI
-    if [[ "$TAILWIND_OPTION" == "不安裝Tailwind CSS" ]]; then
-        # 沒有安裝 Tailwind，不顯示 Shadcn UI
+    if [[ "$TAILWIND_OPTION" == "不安裝Tailwind CSS" ]] || [[ "$TAILWIND_OPTION" == "Tailwind CSS v3" ]]; then
+        # 沒有安裝 Tailwind 或選擇 Tailwind v3，不顯示 Shadcn UI
         selected_items=$(gum choose \
             --no-limit \
             --header "選擇要安裝的擴充套件 (多選，使用空白鍵選擇，Enter 確認)" \
@@ -200,7 +203,7 @@ setup_packages() {
             "SWR" \
             "Axios")
     else
-        # 有安裝 Tailwind，顯示 Shadcn UI 選項
+        # 選擇 Tailwind v4，顯示 Shadcn UI 選項
         selected_items=$(gum choose \
             --no-limit \
             --header "選擇要安裝的擴充套件 (多選，使用空白鍵選擇，Enter 確認)" \

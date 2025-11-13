@@ -22,7 +22,7 @@ install() {
     echo ""
 
     # 1. 建立專案
-    pnpm create next-app@latest "$project_path" --typescript --no-eslint --react-compiler --no-tailwind --no-src-dir --app --turbopack --import-alias "@/*"
+    pnpm create next-app@latest "$project_path" --yes
     if [ $? -ne 0 ]; then
         error_msg "Next.js 專案建立失敗"
         return 1
@@ -31,7 +31,11 @@ install() {
     # 進入專案目錄
     cd "$project_path" || return 1
 
-    # 2. 安裝 Tailwind CSS v3
+    # 2. 解除安裝 Tailwind CSS v4
+    pnpm remove tailwindcss -D
+    rm -rf globals.css
+
+    # 3. 安裝 Tailwind CSS v3
     info_msg "安裝 Tailwind CSS v3 及相關套件"
     pnpm add -D tailwindcss@^3 postcss autoprefixer --silent
     if [ $? -ne 0 ]; then

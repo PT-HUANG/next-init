@@ -1,1 +1,27 @@
-@import 'tailwindcss';
+@import "tailwindcss";
+
+/* 明體字體 - 適合標題和重要文字 */
+@font-face {
+  font-family: "SYSCC-Ming";
+  src: url("https://ehis.kfsyscc.org/FilesServer/fonts/syscc_emp_v2_ming.woff2") format("woff2"), 
+       url("https://ehis.kfsyscc.org/FilesServer/fonts/syscc_emp_v2_ming.woff") format("woff");
+  font-weight: normal;
+  font-style: normal;
+  font-display: swap;
+}
+
+/* 楷體字體 - 適合內文和裝飾性文字 */
+@font-face {
+  font-family: "SYSCC-Kai";
+  src: url("https://ehis.kfsyscc.org/FilesServer/fonts/syscc_emp_v2_kai.woff2") format("woff2"),
+       url("https://ehis.kfsyscc.org/FilesServer/fonts/syscc_emp_v2_kai.woff") format("woff");
+  font-weight: normal;
+  font-style: normal;
+  font-display: swap;
+}
+
+:root {
+  /* 和信醫院字體 SYSCC-Ming SYSCC-Kai */
+  --font-family-primary: "Microsoft JhengHei", "SYSCC-Ming", "PingFang TC", sans-serif;
+  --font-family-secondary: "Microsoft JhengHei", "SYSCC-Kai", "PingFang TC", sans-serif;
+}
