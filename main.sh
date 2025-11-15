@@ -53,9 +53,6 @@ show_usage() {
     echo -e "      - SWR"
     echo -e "      - Axios"
     echo ""
-    echo -e "  ${CYAN}步驟 4${NC} - 設定 next.config.ts"
-    echo -e "    • 啟用 standalone 輸出模式（Docker 最佳化）"
-    echo ""
 }
 
 # ============================================================================
@@ -66,9 +63,6 @@ check_dependencies() {
     # 檢查 setup_next.sh
     check_file "$SCRIPT_DIR/setup_next.sh" "在腳本目錄找不到 setup_next.sh: $SCRIPT_DIR"
 
-    # 檢查 setup_config.sh
-    check_file "$SCRIPT_DIR/setup_config.sh" "在腳本目錄找不到 setup_config.sh: $SCRIPT_DIR"
-
     # 檢查 lib 目錄及其內容
     check_directory "$SCRIPT_DIR/lib" "找不到 lib 目錄: $SCRIPT_DIR/lib"
     check_file "$SCRIPT_DIR/lib/common.sh" "找不到 lib/common.sh"
@@ -76,17 +70,17 @@ check_dependencies() {
 
     # 檢查 next_installers 目錄及其內容
     check_directory "$SCRIPT_DIR/next_installers" "找不到 next_installers 目錄: $SCRIPT_DIR/next_installers"
+    check_file "$SCRIPT_DIR/next_installers/no-tailwind.sh" "找不到 next_installers/no-tailwind.sh"
     check_file "$SCRIPT_DIR/next_installers/tailwind-v3.sh" "找不到 next_installers/tailwind-v3.sh"
     check_file "$SCRIPT_DIR/next_installers/tailwind-v4.sh" "找不到 next_installers/tailwind-v4.sh"
-    check_file "$SCRIPT_DIR/next_installers/no-tailwind.sh" "找不到 next_installers/no-tailwind.sh"
 
     # 檢查 templates 目錄及其內容
     check_directory "$SCRIPT_DIR/templates" "找不到 templates 目錄: $SCRIPT_DIR/templates"
-    check_file "$SCRIPT_DIR/templates/tailwind-v3.config.ts" "找不到 templates/tailwind-v3.config.ts"
-    check_file "$SCRIPT_DIR/templates/postcss-v3.config.mjs" "找不到 templates/postcss-v3.config.mjs"
-    check_file "$SCRIPT_DIR/templates/postcss-v4.config.mjs" "找不到 templates/postcss-v4.config.mjs"
     check_file "$SCRIPT_DIR/templates/globals-v3.css" "找不到 templates/globals-v3.css"
     check_file "$SCRIPT_DIR/templates/globals-v4.css" "找不到 templates/globals-v4.css"
+    check_file "$SCRIPT_DIR/templates/postcss-v3.config.mjs" "找不到 templates/postcss-v3.config.mjs"
+    check_file "$SCRIPT_DIR/templates/postcss-v4.config.mjs" "找不到 templates/postcss-v4.config.mjs"
+    check_file "$SCRIPT_DIR/templates/tailwind-v3.config.js" "找不到 templates/tailwind-v3.config.js"
 
     # 授予執行權限
     chmod +x "$SCRIPT_DIR"/*.sh
@@ -191,8 +185,8 @@ setup_packages() {
     local selected_items
 
     # 根據 Tailwind 選擇決定是否顯示 Shadcn UI
-    if [[ "$TAILWIND_OPTION" == "不安裝Tailwind CSS" ]] || [[ "$TAILWIND_OPTION" == "Tailwind CSS v3" ]]; then
-        # 沒有安裝 Tailwind 或選擇 Tailwind v3，不顯示 Shadcn UI
+    if [[ "$TAILWIND_OPTION" == "不安裝Tailwind CSS" ]]; then
+        # 沒有安裝 Tailwind CSS，不顯示 Shadcn UI
         selected_items=$(gum choose \
             --no-limit \
             --header "選擇要安裝的擴充套件 (多選，使用空白鍵選擇，Enter 確認)" \
@@ -203,7 +197,7 @@ setup_packages() {
             "SWR" \
             "Axios")
     else
-        # 選擇 Tailwind v4，顯示 Shadcn UI 選項
+        # 選擇 Tailwind CSS v3/v4，顯示 Shadcn UI 選項
         selected_items=$(gum choose \
             --no-limit \
             --header "選擇要安裝的擴充套件 (多選，使用空白鍵選擇，Enter 確認)" \

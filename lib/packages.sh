@@ -4,9 +4,12 @@
 # 套件安裝管理模組
 # ============================================================================
 
-# 載入共用函式庫
-SCRIPT_DIR="$( cd "$( dirname "${BASH_SOURCE[0]}" )" && pwd )"
-source "$SCRIPT_DIR/common.sh"
+if [ -n "$IS_PACKAGES_SOURCED" ]; then
+  return
+fi
+IS_PACKAGES_SOURCED=1
+
+# 注意: common.sh 已經由 setup_next.sh 載入，這裡不需要重複載入
 
 # ============================================================================
 # 安裝擴充套件
@@ -16,6 +19,22 @@ install_package() {
     local package_name="$1"
 
     case "$package_name" in
+        "Shadcn UI (推薦)")
+            info_msg "安裝 Shadcn UI"
+            pnpm dlx shadcn@latest init --yes --defaults
+            if [ $? -ne 0 ]; then
+                error_msg "Shadcn UI 初始化失敗"
+                return 1
+            fi
+
+            # 安裝基本元件
+            pnpm dlx shadcn@latest add button
+            pnpm dlx shadcn@latest add alert-dialog
+            pnpm dlx shadcn@latest add checkbox
+
+            success_msg "Shadcn UI 安裝成功"
+            ;;
+
         "Zustand")
             info_msg "安裝 Zustand"
             pnpm add zustand --silent
@@ -69,22 +88,6 @@ install_package() {
                 error_msg "Axios 安裝失敗"
                 return 1
             fi
-            ;;
-
-        "Shadcn UI (推薦)")
-            info_msg "安裝 Shadcn UI"
-            pnpm dlx shadcn@latest init --yes
-            if [ $? -ne 0 ]; then
-                error_msg "Shadcn UI 初始化失敗"
-                return 1
-            fi
-
-            # 安裝基本元件
-            pnpm dlx shadcn@latest add button
-            pnpm dlx shadcn@latest add alert-dialog
-            pnpm dlx shadcn@latest add checkbox
-
-            success_msg "Shadcn UI 安裝成功"
             ;;
 
         *)

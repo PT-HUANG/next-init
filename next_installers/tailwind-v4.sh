@@ -22,7 +22,7 @@ install() {
     echo ""
 
     # 建立專案 & 進入專案目錄
-    pnpm create next-app@latest "$project_path" --yes
+    pnpm create next-app@latest "$project_path" --typescript --no-eslint --react-compiler --tailwind --no-src-dir --app --turbopack --import-alias "@/*"
     if [ $? -ne 0 ]; then
         error_msg "Next.js 專案建立失敗"
         return 1

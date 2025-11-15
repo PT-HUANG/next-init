@@ -4,6 +4,12 @@
 # 共用函式庫 - 顏色定義、訊息輸出、錯誤處理
 # ============================================================================
 
+# 防止重複source
+if [ -n "$IS_COMMON_SOURCED" ]; then
+  return
+fi
+IS_COMMON_SOURCED=1
+
 # 顏色定義
 readonly NC='\033[0m'
 readonly RED='\033[1;31m'
